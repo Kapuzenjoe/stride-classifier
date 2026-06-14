@@ -1,0 +1,28 @@
+{
+  "name": "stride-requirement-classifier-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype for STRIDE multi-label classification of requirements and requirement containers.",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.2.0",
+    "ml-confusion-matrix": "2.0.0",
+    "ml-matrix": "6.12.2",
+    "ml-svm": "2.1.2",
+    "papaparse": "5.5.3",
+    "seedrandom": "3.0.5"
+  },
+  "devDependencies": {
+    "eslint": "10.4.1",
+    "eslint-plugin-jsdoc": "^63.0.2"
+  },
+  "engines": {
+    "node": ">=24.0.0 <25"
+  }
+}
