@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { ClassificationResult } from "../models/ClassificationResult.js";
 import { STRIDE_CODES } from "../models/StrideCategory.js";
+import { fuseEmbedding } from "../utils/embedding.js";
 
 /**
  * Abstrakte Basisklasse aller Klassifikations-Plugins nach Binary-Relevance-Prinzip.
@@ -97,15 +98,42 @@ export class ClassifierPlugin {
   }
 
   /**
+   * Wie extractEmbeddings(), fusioniert aber jede Einbettung mit dem Mittelwert
+   * ihrer verknuepften Kontextelement-Einbettungen.
+   *
+   * @param {import("../models/Requirement.js").Requirement[]} requirements
+   * @param {Map<string, import("../models/ContextElement.js").ContextElement[]>} contextByRequirement
+   * @param {object} [opts]
+   * @param {Function} [opts.onProgress]
+   * @returns {Promise<number[][]>}
+   */
+  async extractFusedEmbeddings(requirements, contextByRequirement, { onProgress } = {}) {
+    const reqEmbeddings = await this.extractEmbeddings(requirements, { onProgress });
+
+    const elements = [...new Map([...contextByRequirement.values()].flat().map(el => [el.id, el])).values()];
+    const contextEmbeddings = elements.length > 0
+      ? await this.extractEmbeddings(elements.map(el => ({ text: `${el.designation}: ${el.content.description}` })))
+      : [];
+    const embeddingById = new Map(elements.map((el, i) => [el.id, contextEmbeddings[i]]));
+
+    return requirements.map((req, i) =>
+      fuseEmbedding(reqEmbeddings[i], (contextByRequirement.get(req.id) ?? []).map(el => embeddingById.get(el.id)))
+    );
+  }
+
+  /**
    * Klassifiziert Anforderungen und gibt je Anforderung ein Zuordnungsergebnis
    * mit vorhergesagten Labels und klassenweisen Zuordnungswerten zurueck.
    *
    * @param {import("../models/Requirement.js").Requirement[]} requirements
+   * @param contextByRequirement
    * @returns {Promise<ClassificationResult[]>}
    */
-  async classify(requirements) {
+  async classify(requirements, contextByRequirement = null) {
     const model = await this.loadModel();
-    const embeddings = await this.extractEmbeddings(requirements);
+    const embeddings = contextByRequirement
+      ? await this.extractFusedEmbeddings(requirements, contextByRequirement)
+      : await this.extractEmbeddings(requirements);
 
     return requirements.map((req, i) => {
       const scores = this._scoreAll(embeddings[i], model);

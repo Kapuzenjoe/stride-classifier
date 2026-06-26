@@ -29,7 +29,6 @@ export class EvaluationService {
    */
   splitTrainValTest(requirements, labelMap, { trainRatio = 0.70, valRatio = 0.15, seed = 42, useNdd = false } = {}) {
     const testRatio = 1 - trainRatio - valRatio;
-    if (testRatio < 0) throw new Error("trainRatio + valRatio muss <= 1 sein.");
 
     const sorted = requirements.toSorted((a, b) => a.id.localeCompare(b.id));
 

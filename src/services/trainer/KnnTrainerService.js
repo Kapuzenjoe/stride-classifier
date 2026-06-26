@@ -15,7 +15,7 @@ export class KnnTrainerService extends TrainerService {
   }
 
   async _trainAlgo({ trainEmb, valEmb, embeddingDim, trainLabels, classSizes,
-    valRequirements, labelMap, outputFileName, containerSource, onWarning }) {
+    valRequirements, labelMap, outputFileName, containerSource, useNdd, onWarning }) {
 
     const trainEmbF32 = trainEmb.map(e => new Float32Array(e));
 
@@ -52,7 +52,7 @@ export class KnnTrainerService extends TrainerService {
       `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
     );
 
-    const outputPath = await this._saveModel(outputFileName, containerSource, {
+    const outputPath = await this._saveModel(outputFileName, containerSource, useNdd, {
       k: kPerClass,
       embeddingDim, classSizes, thresholds,
       trainEmbeddings: trainEmb.map(e => Array.from(e)),

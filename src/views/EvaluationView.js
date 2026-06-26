@@ -34,27 +34,18 @@ export class EvaluationView {
     for (const c of STRIDE_CODES) {
       const m = perClass[c];
       console.log(
-        ` ${c.padEnd(7)} ${this.#pct(m.precision)}  ${this.#pct(m.recall)}  ${this.#pct(m.f1)}`
-        + `  ${this.#pct(m.accuracy)}  ${String(m.positives).padStart(7)}`
+        ` ${c.padEnd(7)} ${m.precision.toFixed(3)}  ${m.recall.toFixed(3)}  ${m.f1.toFixed(3)}`
+        + `  ${m.accuracy.toFixed(3)}  ${String(m.positives).padStart(7)}`
         + `  ${String(m.tp).padStart(4)} ${String(m.fp).padStart(4)} ${String(m.fn).padStart(4)}`
       );
     }
 
     // Aggregat
     console.log(` ${"─".repeat(56)}`);
-    console.log(` Micro-F1  ${this.#pct(microF1)}`);
-    console.log(` Macro-F1  ${this.#pct(macroF1)}`);
+    console.log(` Micro-F1  ${microF1.toFixed(3)}`);
+    console.log(` Macro-F1  ${macroF1.toFixed(3)}`);
 
     console.log(div);
     if (resultPath) console.log(` Ergebnisse: ${resultPath}`);
-  }
-
-  /**
-   * Formatiert eine Zahl als dreistellige Dezimalzahl.
-   * @param {number} value
-   * @returns {string}
-   */
-  #pct(value) {
-    return value.toFixed(3);
   }
 }

@@ -1,41 +1,23 @@
-import { Requirement } from "../models/Requirement.js";
-
 /**
  * Reichert Anforderungen mit ihren verknuepften Kontextelementen an.
  * Kontextelemente werden dem Anforderungstext als Suffix angehängt.
  */
 export class ContextEnrichmentService {
   /**
-   * Gibt eine neue Anforderungsliste zurueck, in der jede Anforderung
-   * mit dem Text ihrer verknuepften Kontextelemente angereichert ist.
+   * Gibt je Anforderung die verknuepften Kontextelemente zurueck.
    *
    * @param {import("../models/Requirement.js").Requirement[]} requirements
    * @param {import("../models/RequirementContainer.js").RequirementContainer} container
-   * @returns {import("../models/Requirement.js").Requirement[]}
+   * @returns {Map<string, import("../models/ContextElement.js").ContextElement[]>}
    */
-  enrich(requirements, container) {
-    const elementById = new Map(
-      container.contextElements.map(el => [el.id, el])
-    );
-
+  linkedContext(requirements, container) {
+    const elementById = new Map(container.contextElements.map(el => [el.id, el]));
     const relsByRequirementId = Map.groupBy(container.relations, rel => rel.fromId);
 
-    return requirements.map(req => {
-      const rels = relsByRequirementId.get(req.id) ?? [];
-      if (rels.length === 0) return req;
-
-      const contextSuffix = rels
-        .map(rel => elementById.get(rel.toId))
-        .filter(Boolean)
-        .map(el => `${el.designation}: ${el.content.description}`)
-        .join(" | ");
-
-      return new Requirement({
-        id: req.id,
-        text: `${req.text} | ${contextSuffix}`,
-        containerId: req.containerId
-      });
-    });
+    return new Map(requirements.map(req => [
+      req.id,
+      (relsByRequirementId.get(req.id) ?? []).map(rel => elementById.get(rel.toId)).filter(Boolean)
+    ]));
   }
 
   /**

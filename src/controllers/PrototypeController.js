@@ -53,47 +53,32 @@ export class PrototypeController {
 
   /**
    * Liest Trainingsdaten aus CSV und persistiert den RequirementContainer als JSON.
-   * Mit --with-context wird der Kontext einmalig in die Anforderungstexte eingebacken;
-   * alle nachgelagerten Befehle (train, evaluate, test) verwenden den Container direkt.
    *
    * @param {object}  options
    * @param {string}  options.source       Quell-Schluessel aus datasets.config.js.
-   * @param {string}  options.output       Dateiname der JSON-Ausgabe (ohne Pfad).
-   * @param {boolean} [options.withContext] Kontext in Requirement-Texte einbacken (default: false).
+   * @param {boolean} [options.withContext] Kontextelemente per Vektor-Fusion einbeziehen (default: false).
    * @returns {Promise<void>}
    */
-  async build({ source = "tabelle1", output, withContext = false }) {
+  async build({ source = "tabelle1", withContext = false }) {
     const sourceConfig = this.datasetImportService.datasetConfig.sources[source];
+    const containerId = `container.${source}${withContext ? ".ctx" : ""}`;
 
     const { requirements, labelMap } = await this.datasetImportService.loadSourceCsv(source);
     const { contextElements, relations } = await this.datasetImportService.loadContextData(source);
 
-    if (withContext && contextElements.length === 0) {
-      throw new Error(`Quelle "${source}" hat keine konfigurierte Context-CSV – --with-context nicht möglich.`);
-    }
-
-    let finalRequirements = requirements;
-    let containerId = `container.${source}`;
-    let containerName = sourceConfig.label ?? source;
-
-    if (withContext && contextElements.length > 0) {
-      const mockContainer = { contextElements, relations };
-      const coverage = this.contextEnrichmentService.coverage(requirements, mockContainer);
-      this.view.renderContextCoverage(coverage);
-
-      finalRequirements = this.contextEnrichmentService.enrich(requirements, mockContainer);
-      containerId = `container.${source}.ctx`;
-      containerName = `${sourceConfig.label ?? source} (mit Kontext)`;
+    if (contextElements.length > 0) {
+      this.view.renderContextCoverage(this.contextEnrichmentService.coverage(requirements, { contextElements, relations }));
     }
 
     const { container, outputPath } = await this.containerBuildService.build({
       containerId,
-      containerName,
-      requirements: finalRequirements,
+      containerName: `${sourceConfig.label ?? source}${withContext ? " (mit Kontext)" : ""}`,
+      requirements,
       labelMap,
-      outputFileName: output,
+      outputFileName: `${containerId}.json`,
       contextElements,
-      relations
+      relations,
+      withContext
     });
 
     this.view.renderBuildResult({ container, outputPath });
@@ -114,7 +99,8 @@ export class PrototypeController {
    */
   async classify({ containerPath, classifierName, encoderName, csvPath }) {
     const { container, labelMap } = await this.containerLoadService.load(containerPath);
-    const results = await this.classifierPlugin.classify(container.requirements);
+    const contextByRequirement = this.#contextFor(container);
+    const results = await this.classifierPlugin.classify(container.requirements, contextByRequirement);
 
     const textMap = this.#buildTextMap(container);
     const resultPath = await this.resultsWriterService.write({ classifierName, encoderName, containerPath, results, labelMap, textMap });
@@ -133,7 +119,7 @@ export class PrototypeController {
    * @param {string}  options.containerPath  Pfad zur Container-JSON-Datei.
    * @param {string}  options.classifierName Name des Klassifikators.
    * @param {string}  [options.encoderName]  Name des Encoders (fuer Dateinamen).
-   * @param {boolean} [options.useNdd]        Near-Duplicate-Clustering vor dem Split anwenden (default: false).
+   * @param options.useNdd
    * @returns {Promise<void>}
    */
   async evaluate({ containerPath, classifierName, encoderName, useNdd = false }) {
@@ -142,15 +128,16 @@ export class PrototypeController {
     this.#ensureGroundTruth(labelMap, containerPath);
 
     const { test } = this.evaluationService.splitTrainValTest(container.requirements, labelMap, { useNdd });
+    const contextByRequirement = this.#contextFor(container);
 
-    const testResults = await this.classifierPlugin.classify(test);
+    const testResults = await this.classifierPlugin.classify(test, contextByRequirement);
     const perClass = this.metricsService.computePerClass(testResults, labelMap);
     const { microF1, macroF1 } = this.metricsService.computeAggregate(perClass);
 
     const textMap = this.#buildTextMap(container);
     const resultPath = await this.resultsWriterService.write({
       classifierName, encoderName, containerPath,
-      results: testResults, labelMap, textMap
+      results: testResults, labelMap, textMap, useNdd
     });
 
     this.evaluationView.renderEvaluationTable({
@@ -174,7 +161,8 @@ export class PrototypeController {
     const { container, labelMap } = await this.containerLoadService.load(containerPath);
     this.#ensureGroundTruth(labelMap, containerPath);
 
-    const results = await this.classifierPlugin.classify(container.requirements);
+    const contextByRequirement = this.#contextFor(container);
+    const results = await this.classifierPlugin.classify(container.requirements, contextByRequirement);
     const perClass = this.metricsService.computePerClass(results, labelMap);
     const { microF1, macroF1 } = this.metricsService.computeAggregate(perClass);
 
@@ -207,6 +195,7 @@ export class PrototypeController {
     const containerSource = this.#extractSource(containerPath);
 
     const { train, validation } = this.evaluationService.splitTrainValTest(container.requirements, labelMap, { useNdd });
+    const contextByRequirement = this.#contextFor(container);
 
     this.view.renderTrainStart({ containerName: container.name, classifierName, total: train.length });
 
@@ -216,6 +205,8 @@ export class PrototypeController {
       labelMap,
       outputFileName: output,
       containerSource,
+      contextByRequirement,
+      useNdd,
       onProgress: (done, total) => this.view.renderTrainProgress(done, total),
       onWarning: codes => this.view.renderTrainWarning(codes)
     };
@@ -230,6 +221,10 @@ export class PrototypeController {
   }
 
   // ── Private Hilfsmethoden ────────────────────────────────────────────────────
+
+  #contextFor(container) {
+    return container.withContext ? this.contextEnrichmentService.linkedContext(container.requirements, container) : null;
+  }
 
   /**
    * Baut eine Map von Anforderungs-ID zu Anforderungstext.

@@ -24,8 +24,6 @@ export class ContainerLoadService {
     } catch(err) {
       throw new Error(`Container nicht lesbar: "${filePath}" – ${err.message}`);
     }
-    raw.contextElements ??= [];
-    raw.relations ??= [];
 
     const labelMap = new Map();
 
@@ -54,7 +52,8 @@ export class ContainerLoadService {
       name: raw.name,
       requirements,
       contextElements,
-      relations
+      relations,
+      withContext: raw.withContext
     });
 
     return { container, labelMap };

@@ -24,15 +24,17 @@ export class ContainerBuildService {
    * @param {string} options.outputFileName     Dateiname der JSON-Ausgabe (ohne Pfad).
    * @param {import("../models/ContextElement.js").ContextElement[]} options.contextElements
    * @param {import("../models/Relation.js").Relation[]} options.relations
+   * @param options.withContext
    * @returns {Promise<{ container: RequirementContainer, outputPath: string }>}
    */
-  async build({ containerId, containerName, requirements, labelMap, outputFileName, contextElements, relations }) {
+  async build({ containerId, containerName, requirements, labelMap, outputFileName, contextElements, relations, withContext = false }) {
     const container = new RequirementContainer({
       id: containerId,
       name: containerName,
       requirements,
       contextElements,
-      relations
+      relations,
+      withContext
     });
 
     const outputPath = path.join(this.datasetConfig.containerOutputDir, outputFileName);
@@ -53,6 +55,7 @@ export class ContainerBuildService {
     return {
       id: container.id,
       name: container.name,
+      withContext: container.withContext,
       requirements: container.requirements.map(r => ({
         id: r.id,
         text: r.text,

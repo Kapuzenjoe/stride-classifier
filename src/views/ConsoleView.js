@@ -127,8 +127,8 @@ export class ConsoleView {
 
     for (const code of STRIDE_CODES) {
       const size = String(classSizes[code]).padStart(3);
-      const thr = hasThresholds ? `  ${(thresholds[code] ?? 0).toFixed(2)}      ` : "";
-      const f1v = hasValF1 ? `  ${(validationF1[code] ?? 0).toFixed(2)}` : "";
+      const thr = hasThresholds ? `  ${thresholds[code].toFixed(2)}      ` : "";
+      const f1v = hasValF1 ? `  ${validationF1[code].toFixed(2)}` : "";
       console.log(`  ${code}       ${size}               ${thr}${f1v}`);
     }
     console.log(`\nModell gespeichert: ${outputPath}`);

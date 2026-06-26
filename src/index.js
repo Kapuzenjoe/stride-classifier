@@ -63,10 +63,11 @@ const resolveModelPath = arg => resolvePath(arg, datasets.modelsDir, "model.");
  * @param containerArg
  * @param classifier
  * @param encoder
+ * @param useNdd
  */
-function defaultModelFileName(containerArg, classifier, encoder) {
+function defaultModelFileName(containerArg, classifier, encoder, useNdd) {
   const source = path.basename(containerArg ?? "unknown", ".json").replace(/^container\./, "");
-  return `model.${[source, classifier, encoder].join(".")}.json`;
+  return `model.${[source, classifier, encoder].join(".")}${useNdd ? ".ndd" : ""}.json`;
 }
 
 // ─── Classifier/Encoder aus Modell ableiten (evaluate / test / classify) ──────
@@ -96,7 +97,10 @@ if (["evaluate", "test", "classify"].includes(command)) {
     }
     args.classifier = modelJson.classifierName;
     args.encoder = modelJson.encoderName;
-    if (command === "evaluate") args.container ??= modelJson.containerSource;
+    if (command === "evaluate") {
+      args.container ??= modelJson.containerSource;
+      args.useNdd = modelJson.useNdd ?? false;
+    }
   }
 }
 
@@ -170,11 +174,7 @@ switch (command) {
 
   case "build": {
     const source = args.source ?? "tabelle1";
-    await controller.build({
-      source,
-      output: `container.${source}${args["with-context"] ? ".ctx" : ""}.json`,
-      withContext: args["with-context"]
-    });
+    await controller.build({ source, withContext: args["with-context"] });
     break;
   }
 
@@ -186,7 +186,7 @@ switch (command) {
     await controller.train({
       containerPath,
       classifierName: args.classifier,
-      output: defaultModelFileName(args.container, args.classifier, args.encoder),
+      output: defaultModelFileName(args.container, args.classifier, args.encoder, args.ndd),
       useNdd: args.ndd
     });
     break;
@@ -197,7 +197,7 @@ switch (command) {
       containerPath,
       classifierName: args.classifier,
       encoderName: encoderNameForFile,
-      useNdd: args.ndd
+      useNdd: args.useNdd
     });
     break;
 

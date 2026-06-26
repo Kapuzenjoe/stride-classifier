@@ -1,11 +1,11 @@
 import { ClassifierPlugin } from "../ClassifierPlugin.js";
 import { STRIDE_CODES } from "../../models/StrideCategory.js";
-import { dot } from "../../utils/embedding.js";
+import { dot, centerScores } from "../../utils/embedding.js";
 import { ClassifierName } from "../../config/classifiers.config.js";
 
 /**
  * Rocchio-Klassifikator (NCC) nach Binary-Relevance-Prinzip.
- * Zuordnungswert je STRIDE-Klasse ist die Cosine-Aehnlichkeit zum L2-normierten Klassencentroid.
+ * Zuordnungswert je STRIDE-Klasse ist die relativierte Cosine-Aehnlichkeit zum L2-normierten Klassencentroid.
  */
 export class TransformerCentroidClassifierPlugin extends ClassifierPlugin {
   /**
@@ -36,15 +36,16 @@ export class TransformerCentroidClassifierPlugin extends ClassifierPlugin {
   }
 
   /**
-   * Berechnet die Cosine-Aehnlichkeit der Anforderungseinbettung zum Klassencentroid je STRIDE-Klasse.
+   * Berechnet den relativierten Zuordnungswert je STRIDE-Klasse.
    *
    * @param {Float32Array} embedding  L2-normalisierte Einbettung der Anforderung.
    * @param {object}       model      Geladenes Centroid-Modell.
-   * @returns {Record<string, number>}  STRIDE-Code -> Zuordnungswert ∈ [-1, 1].
+   * @returns {Record<string, number>}  STRIDE-Code -> relativierter Zuordnungswert.
    */
   _scoreAll(embedding, model) {
-    return Object.fromEntries(
+    const rawScores = Object.fromEntries(
       STRIDE_CODES.map(code => [code, dot(embedding, model.centroids[code])])
     );
+    return centerScores(rawScores);
   }
 }

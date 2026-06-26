@@ -65,7 +65,7 @@ export const encoderConfigs = {
     modelName: "Xenova/bge-m3",
     library: "@huggingface/transformers",
     task: "feature-extraction",
-    extractionOptions: { pooling: "mean", normalize: true },
+    extractionOptions: { pooling: "cls", normalize: true },
     inputPrefix: "",      // Kein Prefix für symmetrische Klassifikation
     batchSize: 8
   }

@@ -30,24 +30,30 @@ export class TrainerService {
    * @param {Map}      opts.labelMap
    * @param {string}   opts.outputFileName
    * @param {string}   opts.containerSource  Quell-Bezeichner fuer die Modell-Metadaten.
+   * @param {Map} [opts.contextByRequirement]
+   * @param opts.useNdd
    * @param {Function} [opts.onProgress]
    * @param {Function} [opts.onWarning]
    */
-  async train({ trainRequirements, valRequirements, labelMap, outputFileName, containerSource, onProgress, onWarning = null }) {
-    this._guardEmptyTrainSplit(trainRequirements, this.constructor.name);
+  async train({ trainRequirements, valRequirements, labelMap, outputFileName, containerSource, contextByRequirement = null, useNdd = false, onProgress, onWarning = null }) {
+    if (trainRequirements.length === 0) throw new Error(`Trainings-Split leer – ${this.constructor.name} abgebrochen.`);
 
-    const trainEmb = await this.classifier.extractEmbeddings(trainRequirements, { onProgress });
-    const valEmb = await this.classifier.extractEmbeddings(valRequirements);
+    const trainEmb = contextByRequirement
+      ? await this.classifier.extractFusedEmbeddings(trainRequirements, contextByRequirement, { onProgress })
+      : await this.classifier.extractEmbeddings(trainRequirements, { onProgress });
+    const valEmb = contextByRequirement
+      ? await this.classifier.extractFusedEmbeddings(valRequirements, contextByRequirement)
+      : await this.classifier.extractEmbeddings(valRequirements);
     const embeddingDim = trainEmb[0]?.length ?? 0;
 
     const trainLabels = this._buildTrainLabels(trainRequirements, labelMap);
-    const classSizes = this._computeClassSizes(trainLabels);
+    const classSizes = Object.fromEntries(STRIDE_CODES.map(c => [c, trainLabels.filter(l => l[c]).length]));
 
     return this._trainAlgo({
       trainEmb, valEmb, embeddingDim,
       trainLabels, classSizes,
       valRequirements, labelMap,
-      outputFileName, containerSource, onWarning
+      outputFileName, containerSource, useNdd, onWarning
     });
   }
 
@@ -102,10 +108,6 @@ export class TrainerService {
 
   // ── Protected Hilfsmethoden ─────────────────────────────────────────────────
 
-  _guardEmptyTrainSplit(requirements, modelLabel) {
-    if (requirements.length === 0) throw new Error(`Trainings-Split leer – ${modelLabel} abgebrochen.`);
-  }
-
   _buildTrainLabels(requirements, labelMap) {
     return requirements.map(req => {
       const l = labelMap.get(req.id) ?? {};
@@ -113,19 +115,14 @@ export class TrainerService {
     });
   }
 
-  _computeClassSizes(trainLabels) {
-    return Object.fromEntries(
-      STRIDE_CODES.map(c => [c, trainLabels.filter(l => l[c]).length])
-    );
-  }
-
-  async _saveModel(outputFileName, containerSource, payload) {
+  async _saveModel(outputFileName, containerSource, useNdd, payload) {
     const outputPath = path.join(this.datasets.modelsDir, outputFileName);
     await mkdir(this.datasets.modelsDir, { recursive: true });
     await writeFile(outputPath, JSON.stringify({
       classifierName: this.classifier.name,
       encoderName: this.classifier.encoderConfig.name,
       containerSource,
+      useNdd,
       modelName: this.classifier.encoderConfig.modelName,
       createdAt: new Date().toISOString(),
       ...payload

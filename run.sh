@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+mkdir -p data/results
+exec > >(tee "data/results/run_$(date +%Y%m%d_%H%M%S).log") 2>&1
+
 ENCODERS=(jina-de e5-large bge-m3)
 CLASSIFIERS=(svm knn centroid)
 
@@ -14,9 +17,9 @@ node src/index.js build --source tabelle3
 node src/index.js build --source tabelle1 --with-context
 node src/index.js build --source tabelle3 --with-context
 
-# ── 2. Training: tabelle1, dann tabelle1.ctx, je 9 Encoder/Classifier-Kombos ──
+# ── 2. Training: tabelle1, tabelle1.ctx, dann tabelle1+ndd, je 9 Encoder/Classifier-Kombos ──
 echo "=========================================="
-echo "Train: tabelle1 & tabelle1.ctx (9 Kombos je Container = 18 Modelle)"
+echo "Train: tabelle1, tabelle1.ctx & tabelle1+ndd (9 Kombos je Variante = 27 Modelle)"
 echo "=========================================="
 for CONTAINER in tabelle1 tabelle1.ctx; do
   for CLASSIFIER in "${CLASSIFIERS[@]}"; do
@@ -29,9 +32,18 @@ for CONTAINER in tabelle1 tabelle1.ctx; do
   done
 done
 
-# ── 3. Interne Evaluation: alle 18 trainierten Modelle + Rule-Based auf tabelle1 ──
+for CLASSIFIER in "${CLASSIFIERS[@]}"; do
+  for ENCODER in "${ENCODERS[@]}"; do
+    echo "------------------------------------------"
+    echo "Training: tabelle1 / $CLASSIFIER / $ENCODER (--ndd)"
+    echo "------------------------------------------"
+    node src/index.js train --container tabelle1 --classifier "$CLASSIFIER" --encoder "$ENCODER" --ndd
+  done
+done
+
+# ── 3. Interne Evaluation: alle 27 trainierten Modelle + Rule-Based auf tabelle1 ──
 echo "=========================================="
-echo "Evaluate: interner Test-Split (18 Modelle + Rule-Based)"
+echo "Evaluate: interner Test-Split (27 Modelle + Rule-Based)"
 echo "=========================================="
 TRAINED_MODELS=()
 for CONTAINER in tabelle1 tabelle1.ctx; do
@@ -39,6 +51,11 @@ for CONTAINER in tabelle1 tabelle1.ctx; do
     for ENCODER in "${ENCODERS[@]}"; do
       TRAINED_MODELS+=("${CONTAINER}.${CLASSIFIER}.${ENCODER}")
     done
+  done
+done
+for CLASSIFIER in "${CLASSIFIERS[@]}"; do
+  for ENCODER in "${ENCODERS[@]}"; do
+    TRAINED_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}.ndd")
   done
 done
 
@@ -56,12 +73,13 @@ node src/index.js evaluate --container tabelle1 --rule-based
 
 # ── 4. Externer Test auf tabelle2: Modelle ohne Kontext + Rule-Based ──
 echo "=========================================="
-echo "Test: extern auf tabelle2 (Modelle ohne Kontext + Rule-Based)"
+echo "Test: extern auf tabelle2 (Modelle ohne Kontext, mit/ohne ndd + Rule-Based)"
 echo "=========================================="
 TEST_MODELS=()
 for CLASSIFIER in "${CLASSIFIERS[@]}"; do
   for ENCODER in "${ENCODERS[@]}"; do
     TEST_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}")
+    TEST_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}.ndd")
   done
 done
 

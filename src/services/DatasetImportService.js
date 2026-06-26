@@ -72,14 +72,10 @@ export class DatasetImportService {
   async #loadCsv(filePath) {
     const raw = await readFile(filePath, "utf-8");
     const { data } = Papa.parse(raw, {
-      delimiter: "",                   // Auto-detect (;, ",", \t)
+      delimiter: "",
       skipEmptyLines: true,
       transform: val => val.trim()
     });
-
-    if (data.length < 2) throw new Error(
-      `CSV-Datei "${filePath}" enthaelt keine Datenzeilen.`
-    );
 
     const [headers, ...rows] = data;
 
@@ -91,15 +87,10 @@ export class DatasetImportService {
     const labelMap = new Map();
 
     for (const cols of rows) {
-      const id = cols[0];  // Spalte 0 = ID
-      const text = cols[1];  // Spalte 1 = Text
+      const id = cols[0];
+      const text = cols[1];
 
       if (!id || !text) continue;
-
-      if (labelMap.has(id)) {
-        process.stderr.write(`⚠ DatasetImport: doppelte ID "${id}" in "${filePath}" – erste Zeile wird behalten.\n`);
-        continue;
-      }
 
       requirements.push(new Requirement({ id, text, containerId: null }));
       labelMap.set(
