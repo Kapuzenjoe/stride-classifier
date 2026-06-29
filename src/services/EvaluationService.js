@@ -20,21 +20,18 @@ export class EvaluationService {
    * @param {number} [options.trainRatio=0.70]  Anteil der Trainingsmenge.
    * @param {number} [options.valRatio=0.15]    Anteil der Validierungsmenge.
    * @param {number} [options.seed=42]          Seed fuer die Zufallsmischung je Signaturgruppe.
-   * @param {boolean} [options.useNdd=false]    Near-Duplicate-Clustering vor dem Split anwenden.
    * @returns {{
    *   train:      import("../models/Requirement.js").Requirement[],
    *   validation: import("../models/Requirement.js").Requirement[],
    *   test:       import("../models/Requirement.js").Requirement[]
    * }}
    */
-  splitTrainValTest(requirements, labelMap, { trainRatio = 0.70, valRatio = 0.15, seed = 42, useNdd = false } = {}) {
+  splitTrainValTest(requirements, labelMap, { trainRatio = 0.70, valRatio = 0.15, seed = 42 } = {}) {
     const testRatio = 1 - trainRatio - valRatio;
 
     const sorted = requirements.toSorted((a, b) => a.id.localeCompare(b.id));
 
-    const clusters = useNdd
-      ? this.#detector.detectClusters(sorted)
-      : new Map(sorted.map(req => [req.id, [req]]));
+    const clusters = this.#detector.detectClusters(sorted);
     const representatives = sorted.filter(req => clusters.get(req.id)[0] === req);
     const groups = this.#groupBySignature(representatives, labelMap);
 

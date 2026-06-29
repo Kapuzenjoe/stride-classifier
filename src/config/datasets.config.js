@@ -15,23 +15,23 @@ const dataRoot = path.join(prototypeRoot, "data");
  */
 export const datasets = {
   sources: {
-    tabelle1: {
+    "ext1-ctx": {
       csv: path.join(testDataRoot, "Anforderung-Tabelle 1.csv"),
       contextElements: path.join(testDataRoot, "Anforderung-Tabelle 1_context-elements.csv"),
       relations: path.join(testDataRoot, "Anforderung-Tabelle 1_relations.csv"),
-      label: "Trainingsdaten – Anforderung-Tabelle 1"
+      label: "Externe Testdaten (mit Kontext) – Anforderung-Tabelle Systemanteil A"
     },
-    tabelle2: {
+    "ext2-plain": {
       csv: [path.join(testDataRoot, "Anforderung-Tabelle 2_Testdaten.csv")],
       contextElements: null,
       relations: null,
-      label: "Testdaten – Anforderung-Tabelle 2"
+      label: "Externe Testdaten (ohne Kontext) – Anforderung-Tabelle PM-System"
     },
-    tabelle3: {
+    train: {
       csv: path.join(testDataRoot, "Anforderung-Tabelle 3_Testdaten.csv"),
       contextElements: path.join(testDataRoot, "Anforderung-Tabelle 3_context-elements.csv"),
       relations: path.join(testDataRoot, "Anforderung-Tabelle 3_relations.csv"),
-      label: "Testdaten – Anforderung-Tabelle 3"
+      label: "Trainingsdaten – Anforderung-Tabelle FMN"
     }
   },
 

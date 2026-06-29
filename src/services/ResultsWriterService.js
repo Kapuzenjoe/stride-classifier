@@ -26,10 +26,9 @@ export class ResultsWriterService {
    * @param {import("../models/ClassificationResult.js").ClassificationResult[]} options.results
    * @param {Map<string, object>} options.labelMap  Ground-Truth je Anforderungs-ID.
    * @param {Map<string, string>} options.textMap   Anforderungstext je ID.
-   * @param options.useNdd
    * @returns {Promise<string>} Absoluter Pfad der geschriebenen Datei.
    */
-  async write({ classifierName, encoderName, containerPath, results, labelMap, textMap, useNdd = false }) {
+  async write({ classifierName, encoderName, containerPath, results, labelMap, textMap }) {
     await mkdir(this.datasetConfig.resultsDir, { recursive: true });
 
     const serialized = results.map(r => ({
@@ -43,7 +42,7 @@ export class ResultsWriterService {
     const source = path.basename(containerPath, ".json").replace(/^container\./, "");
     const filePath = path.join(
       this.datasetConfig.resultsDir,
-      `results.${source}${useNdd ? ".ndd" : ""}.${classifierName}${encoderName ? `.${encoderName}` : ""}.json`
+      `results.${source}.${classifierName}${encoderName ? `.${encoderName}` : ""}.json`
     );
     await writeFile(filePath, JSON.stringify({
       classifier: classifierName, containerPath,

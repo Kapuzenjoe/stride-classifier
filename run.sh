@@ -7,21 +7,20 @@ exec > >(tee "data/results/run_$(date +%Y%m%d_%H%M%S).log") 2>&1
 ENCODERS=(jina-de e5-large bge-m3)
 CLASSIFIERS=(svm knn centroid)
 
-# ── 1. Container bauen (5: tabelle1/2/3 + tabelle1.ctx + tabelle3.ctx) ──
+# ── 1. Container bauen (train/train.ctx fuer Training, ext1-ctx/ext2-plain fuer externen Test) ──
 echo "=========================================="
 echo "Build: Container"
 echo "=========================================="
-node src/index.js build --source tabelle1
-node src/index.js build --source tabelle2
-node src/index.js build --source tabelle3
-node src/index.js build --source tabelle1 --with-context
-node src/index.js build --source tabelle3 --with-context
+node src/index.js build --source train
+node src/index.js build --source train --with-context
+node src/index.js build --source ext1-ctx --with-context
+node src/index.js build --source ext2-plain
 
-# ── 2. Training: tabelle1, tabelle1.ctx, dann tabelle1+ndd, je 9 Encoder/Classifier-Kombos ──
+# ── 2. Training: train, train.ctx, je 9 Encoder/Classifier-Kombos ──
 echo "=========================================="
-echo "Train: tabelle1, tabelle1.ctx & tabelle1+ndd (9 Kombos je Variante = 27 Modelle)"
+echo "Train: train & train.ctx (9 Kombos je Variante = 18 Modelle)"
 echo "=========================================="
-for CONTAINER in tabelle1 tabelle1.ctx; do
+for CONTAINER in train train.ctx; do
   for CLASSIFIER in "${CLASSIFIERS[@]}"; do
     for ENCODER in "${ENCODERS[@]}"; do
       echo "------------------------------------------"
@@ -32,30 +31,16 @@ for CONTAINER in tabelle1 tabelle1.ctx; do
   done
 done
 
-for CLASSIFIER in "${CLASSIFIERS[@]}"; do
-  for ENCODER in "${ENCODERS[@]}"; do
-    echo "------------------------------------------"
-    echo "Training: tabelle1 / $CLASSIFIER / $ENCODER (--ndd)"
-    echo "------------------------------------------"
-    node src/index.js train --container tabelle1 --classifier "$CLASSIFIER" --encoder "$ENCODER" --ndd
-  done
-done
-
-# ── 3. Interne Evaluation: alle 27 trainierten Modelle + Rule-Based auf tabelle1 ──
+# ── 3. Interne Evaluation: alle 18 trainierten Modelle + Rule-Based auf train ──
 echo "=========================================="
-echo "Evaluate: interner Test-Split (27 Modelle + Rule-Based)"
+echo "Evaluate: interner Test-Split (18 Modelle + Rule-Based)"
 echo "=========================================="
 TRAINED_MODELS=()
-for CONTAINER in tabelle1 tabelle1.ctx; do
+for CONTAINER in train train.ctx; do
   for CLASSIFIER in "${CLASSIFIERS[@]}"; do
     for ENCODER in "${ENCODERS[@]}"; do
       TRAINED_MODELS+=("${CONTAINER}.${CLASSIFIER}.${ENCODER}")
     done
-  done
-done
-for CLASSIFIER in "${CLASSIFIERS[@]}"; do
-  for ENCODER in "${ENCODERS[@]}"; do
-    TRAINED_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}.ndd")
   done
 done
 
@@ -67,30 +52,52 @@ for MODEL in "${TRAINED_MODELS[@]}"; do
 done
 
 echo "=========================================="
-echo "Evaluating: rule-based (container tabelle1)"
+echo "Evaluating: rule-based (container train)"
 echo "=========================================="
-node src/index.js evaluate --container tabelle1 --rule-based
+node src/index.js evaluate --container train --rule-based
 
-# ── 4. Externer Test auf tabelle2: Modelle ohne Kontext + Rule-Based ──
+# ── 4. Externer Test ohne Kontext auf ext2-plain: Modelle ohne Kontext + Rule-Based ──
 echo "=========================================="
-echo "Test: extern auf tabelle2 (Modelle ohne Kontext, mit/ohne ndd + Rule-Based)"
+echo "Test: extern ohne Kontext auf ext2-plain (Modelle ohne Kontext + Rule-Based)"
 echo "=========================================="
-TEST_MODELS=()
+TEST_MODELS_PLAIN=()
 for CLASSIFIER in "${CLASSIFIERS[@]}"; do
   for ENCODER in "${ENCODERS[@]}"; do
-    TEST_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}")
-    TEST_MODELS+=("tabelle1.${CLASSIFIER}.${ENCODER}.ndd")
+    TEST_MODELS_PLAIN+=("train.${CLASSIFIER}.${ENCODER}")
   done
 done
 
-for MODEL in "${TEST_MODELS[@]}"; do
+for MODEL in "${TEST_MODELS_PLAIN[@]}"; do
   echo "=========================================="
-  echo "Testing: $MODEL"
+  echo "Testing: $MODEL auf ext2-plain"
   echo "=========================================="
-  node src/index.js test --container tabelle2 --model "$MODEL"
+  node src/index.js test --container ext2-plain --model "$MODEL"
 done
 
 echo "=========================================="
-echo "Testing: rule-based"
+echo "Testing: rule-based auf ext2-plain"
 echo "=========================================="
-node src/index.js test --container tabelle2 --rule-based
+node src/index.js test --container ext2-plain --rule-based
+
+# ── 5. Externer Test mit Kontext auf ext1-ctx: Modelle mit Kontext + Rule-Based ──
+echo "=========================================="
+echo "Test: extern mit Kontext auf ext1-ctx (Modelle mit Kontext + Rule-Based)"
+echo "=========================================="
+TEST_MODELS_CTX=()
+for CLASSIFIER in "${CLASSIFIERS[@]}"; do
+  for ENCODER in "${ENCODERS[@]}"; do
+    TEST_MODELS_CTX+=("train.ctx.${CLASSIFIER}.${ENCODER}")
+  done
+done
+
+for MODEL in "${TEST_MODELS_CTX[@]}"; do
+  echo "=========================================="
+  echo "Testing: $MODEL auf ext1-ctx"
+  echo "=========================================="
+  node src/index.js test --container ext1-ctx.ctx --model "$MODEL"
+done
+
+echo "=========================================="
+echo "Testing: rule-based auf ext1-ctx"
+echo "=========================================="
+node src/index.js test --container ext1-ctx.ctx --rule-based

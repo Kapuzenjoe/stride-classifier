@@ -12,7 +12,7 @@ export class SvmTrainerService extends TrainerService {
   static #C_GRID = [0.1, 1, 10];
 
   async _trainAlgo({ trainEmb, valEmb, embeddingDim, trainLabels, classSizes,
-    valRequirements, labelMap, outputFileName, containerSource, useNdd, onWarning }) {
+    valRequirements, labelMap, outputFileName, containerSource, onWarning }) {
 
     const trainX = trainEmb.map(e => Array.from(e));
     const valX = valEmb.map(e => Array.from(e));
@@ -37,7 +37,7 @@ export class SvmTrainerService extends TrainerService {
       `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
     );
 
-    const outputPath = await this._saveModel(outputFileName, containerSource, useNdd, {
+    const outputPath = await this._saveModel(outputFileName, containerSource, {
       C, embeddingDim, classSizes, thresholds, validationF1, svmModels
     });
 

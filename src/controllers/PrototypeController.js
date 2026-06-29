@@ -119,15 +119,14 @@ export class PrototypeController {
    * @param {string}  options.containerPath  Pfad zur Container-JSON-Datei.
    * @param {string}  options.classifierName Name des Klassifikators.
    * @param {string}  [options.encoderName]  Name des Encoders (fuer Dateinamen).
-   * @param options.useNdd
    * @returns {Promise<void>}
    */
-  async evaluate({ containerPath, classifierName, encoderName, useNdd = false }) {
+  async evaluate({ containerPath, classifierName, encoderName }) {
 
     const { container, labelMap } = await this.containerLoadService.load(containerPath);
     this.#ensureGroundTruth(labelMap, containerPath);
 
-    const { test } = this.evaluationService.splitTrainValTest(container.requirements, labelMap, { useNdd });
+    const { test } = this.evaluationService.splitTrainValTest(container.requirements, labelMap);
     const contextByRequirement = this.#contextFor(container);
 
     const testResults = await this.classifierPlugin.classify(test, contextByRequirement);
@@ -137,7 +136,7 @@ export class PrototypeController {
     const textMap = this.#buildTextMap(container);
     const resultPath = await this.resultsWriterService.write({
       classifierName, encoderName, containerPath,
-      results: testResults, labelMap, textMap, useNdd
+      results: testResults, labelMap, textMap
     });
 
     this.evaluationView.renderEvaluationTable({
@@ -186,15 +185,14 @@ export class PrototypeController {
    * @param {string} options.containerPath  Pfad zur Container-JSON-Datei.
    * @param {string} options.output         Dateiname der Modell-Ausgabe.
    * @param {string} [options.classifierName] Wählt den Trainer (default: centroid).
-   * @param {boolean} [options.useNdd]        Near-Duplicate-Clustering vor dem Split anwenden (default: false).
    * @returns {Promise<void>}
    */
-  async train({ containerPath, output, classifierName = ClassifierName.CENTROID, useNdd = false }) {
+  async train({ containerPath, output, classifierName = ClassifierName.CENTROID }) {
 
     const { container, labelMap } = await this.containerLoadService.load(containerPath);
     const containerSource = this.#extractSource(containerPath);
 
-    const { train, validation } = this.evaluationService.splitTrainValTest(container.requirements, labelMap, { useNdd });
+    const { train, validation } = this.evaluationService.splitTrainValTest(container.requirements, labelMap);
     const contextByRequirement = this.#contextFor(container);
 
     this.view.renderTrainStart({ containerName: container.name, classifierName, total: train.length });
@@ -206,7 +204,6 @@ export class PrototypeController {
       outputFileName: output,
       containerSource,
       contextByRequirement,
-      useNdd,
       onProgress: (done, total) => this.view.renderTrainProgress(done, total),
       onWarning: codes => this.view.renderTrainWarning(codes)
     };

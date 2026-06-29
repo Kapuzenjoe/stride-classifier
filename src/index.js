@@ -32,7 +32,6 @@ const { positionals, values: args } = parseArgs({
     source: { type: "string" },
     csv: { type: "string" },
     k: { type: "string" },          // KNN: fixes k erzwingen (sonst Grid-Suche)
-    ndd: { type: "boolean", default: false }, // Near-Duplicate-Clustering vor train/evaluate-Split
     "rule-based": { type: "boolean", default: false },
     "with-context": { type: "boolean", default: false }
   },
@@ -58,16 +57,9 @@ function resolvePath(arg, dir, prefix) {
 const resolveContainerPath = arg => resolvePath(arg, datasets.containerOutputDir, "container.");
 const resolveModelPath = arg => resolvePath(arg, datasets.modelsDir, "model.");
 
-/**
- *
- * @param containerArg
- * @param classifier
- * @param encoder
- * @param useNdd
- */
-function defaultModelFileName(containerArg, classifier, encoder, useNdd) {
+function defaultModelFileName(containerArg, classifier, encoder) {
   const source = path.basename(containerArg ?? "unknown", ".json").replace(/^container\./, "");
-  return `model.${[source, classifier, encoder].join(".")}${useNdd ? ".ndd" : ""}.json`;
+  return `model.${[source, classifier, encoder].join(".")}.json`;
 }
 
 // ─── Classifier/Encoder aus Modell ableiten (evaluate / test / classify) ──────
@@ -97,10 +89,7 @@ if (["evaluate", "test", "classify"].includes(command)) {
     }
     args.classifier = modelJson.classifierName;
     args.encoder = modelJson.encoderName;
-    if (command === "evaluate") {
-      args.container ??= modelJson.containerSource;
-      args.useNdd = modelJson.useNdd ?? false;
-    }
+    if (command === "evaluate") args.container ??= modelJson.containerSource;
   }
 }
 
@@ -186,8 +175,7 @@ switch (command) {
     await controller.train({
       containerPath,
       classifierName: args.classifier,
-      output: defaultModelFileName(args.container, args.classifier, args.encoder, args.ndd),
-      useNdd: args.ndd
+      output: defaultModelFileName(args.container, args.classifier, args.encoder)
     });
     break;
 
@@ -196,8 +184,7 @@ switch (command) {
     await controller.evaluate({
       containerPath,
       classifierName: args.classifier,
-      encoderName: encoderNameForFile,
-      useNdd: args.useNdd
+      encoderName: encoderNameForFile
     });
     break;
 

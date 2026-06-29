@@ -9,7 +9,7 @@ import { dot, normalizedMean, centerScores } from "../../utils/embedding.js";
 export class CentroidTrainerService extends TrainerService {
 
   async _trainAlgo({ trainEmb, valEmb, embeddingDim, trainLabels, classSizes,
-    valRequirements, labelMap, outputFileName, containerSource, useNdd, onWarning }) {
+    valRequirements, labelMap, outputFileName, containerSource, onWarning }) {
 
     // Indizes positiver Beispiele je Klasse
     const positiveIndices = Object.fromEntries(STRIDE_CODES.map(c => [c, []]));
@@ -37,7 +37,7 @@ export class CentroidTrainerService extends TrainerService {
       `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
     );
 
-    const outputPath = await this._saveModel(outputFileName, containerSource, useNdd, {
+    const outputPath = await this._saveModel(outputFileName, containerSource, {
       embeddingDim, classSizes, thresholds, centroids
     });
 
