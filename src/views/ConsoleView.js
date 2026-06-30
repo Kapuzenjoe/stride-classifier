@@ -5,7 +5,9 @@ import { ClassifierName } from "../config/classifiers.config.js";
  * Gibt den aktuellen Prototypstatus auf der Konsole aus.
  */
 export class ConsoleView {
-  /** Kurzbezeichnungen je Klassifikator. */
+  /**
+   * Kurzbezeichnungen je Klassifikator.
+   */
   static #LABELS = {
     [ClassifierName.KNN]: "kNN",
     [ClassifierName.SVM]: "SVM",
@@ -14,6 +16,8 @@ export class ConsoleView {
   };
 
   /**
+   * Gibt die Kenndaten eines gebauten Containers aus.
+   *
    * @param {object} payload
    * @param {import("../models/RequirementContainer.js").RequirementContainer} payload.container
    * @param {string} payload.outputPath Pfad zur gespeicherten JSON-Datei.
@@ -29,6 +33,8 @@ export class ConsoleView {
   }
 
   /**
+   * Gibt Label Cardinality und Label Density aus.
+   *
    * @param {object} payload
    * @param {number} payload.labelCardinality Durchschnittliche Anzahl aktiver Labels je Anforderung.
    * @param {number} payload.labelDensity     Label Cardinality normiert auf die Anzahl STRIDE-Klassen.
@@ -71,6 +77,8 @@ export class ConsoleView {
   }
 
   /**
+   * Gibt den Trainingsstart aus.
+   *
    * @param {object} payload
    * @param {string} payload.containerName Name des Containers.
    * @param {string} payload.classifierName

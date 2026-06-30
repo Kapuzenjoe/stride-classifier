@@ -24,10 +24,12 @@ export class ContainerBuildService {
    * @param {string} options.outputFileName     Dateiname der JSON-Ausgabe (ohne Pfad).
    * @param {import("../models/ContextElement.js").ContextElement[]} options.contextElements
    * @param {import("../models/Relation.js").Relation[]} options.relations
-   * @param options.withContext
+   * @param {boolean} [options.withContext=false]
    * @returns {Promise<{ container: RequirementContainer, outputPath: string }>}
    */
-  async build({ containerId, containerName, requirements, labelMap, outputFileName, contextElements, relations, withContext = false }) {
+  async build({
+    containerId, containerName, requirements, labelMap, outputFileName, contextElements, relations, withContext = false
+  }) {
     const container = new RequirementContainer({
       id: containerId,
       name: containerName,

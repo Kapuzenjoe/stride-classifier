@@ -31,11 +31,12 @@ export class CentroidTrainerService extends TrainerService {
       STRIDE_CODES.map(c => [c, dot(e, centroidF32[c])])
     )));
 
-    const steps = Array.from({ length: 201 }, (_, i) => i / 100 - 1);
-    const { thresholds, validationF1, zeroValClasses } = this._optimizeThresholds(valScores, valRequirements, labelMap, steps);
-    if (zeroValClasses.length > 0) onWarning?.(
-      `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
-    );
+    const steps = Array.from({ length: 201 }, (_, i) => (i / 100) - 1);
+    const { thresholds, validationF1, zeroValClasses } =
+      this._optimizeThresholds(valScores, valRequirements, labelMap, steps);
+    if (zeroValClasses.length > 0) {
+      onWarning?.(`Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`);
+    }
 
     const outputPath = await this._saveModel(outputFileName, containerSource, {
       embeddingDim, classSizes, thresholds, centroids

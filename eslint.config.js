@@ -20,6 +20,7 @@ export default [
       "comma-style": "warn",
       "computed-property-spacing": "warn",
       "constructor-super": "error",
+      curly: ["warn", "multi-line"],
       "default-param-last": "warn",
       "dot-location": ["warn", "property"],
       "eol-last": ["error", "always"],
@@ -73,6 +74,7 @@ export default [
       "no-script-url": "warn",
       "no-self-assign": "warn",
       "no-self-compare": "warn",
+      "no-shadow": "warn",
       "no-setter-return": "warn",
       "no-sequences": "warn",
       "no-template-curly-in-string": "warn",
@@ -96,6 +98,7 @@ export default [
       "no-var": "warn",
       "no-void": ["warn", { allowAsStatement: true }],
       "no-whitespace-before-property": "warn",
+      "prefer-const": "warn",
       "prefer-numeric-literals": "warn",
       "prefer-object-spread": "warn",
       "prefer-regex-literals": "warn",
@@ -119,6 +122,7 @@ export default [
       indent: ["warn", 2, { SwitchCase: 1 }],
       "key-spacing": "warn",
       "keyword-spacing": ["warn", { overrides: { catch: { before: true, after: false } } }],
+      "linebreak-style": ["warn", "unix"],
       "max-len": ["warn", {
         code: 120,
         ignoreTrailingComments: true,
@@ -135,6 +139,7 @@ export default [
       "no-useless-escape": "warn",
       "no-unused-vars": ["warn", { args: "none" }],
       "nonblock-statement-body-position": ["warn", "beside"],
+      "object-curly-spacing": ["warn", "always"],
       "one-var": ["warn", "never"],
       "operator-linebreak": ["warn", "before", {
         overrides: { "=": "after", "+=": "after", "-=": "after" }
@@ -160,6 +165,7 @@ export default [
       "jsdoc/check-values": "warn",
       "jsdoc/empty-tags": "warn",
       "jsdoc/implements-on-classes": "warn",
+      "jsdoc/multiline-blocks": ["warn", { noSingleLineBlocks: true }],
       "jsdoc/no-bad-blocks": "warn",
       "jsdoc/require-description": ["warn", { checkConstructors: false }],
       "jsdoc/require-hyphen-before-param-description": ["warn", "never"],

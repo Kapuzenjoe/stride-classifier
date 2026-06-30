@@ -27,7 +27,13 @@ export class TransformerKnnClassifierPlugin extends ClassifierPlugin {
    * Validiert das kNN-Modell und konvertiert Trainingseinbettungen in Float32Arrays
    * fuer den nachfolgenden Klassifikationsschritt.
    *
-   * @param {{ trainEmbeddings: number[][], trainLabels: Record<string, boolean>[], thresholds: Record<string, number>, k: Record<string, number>, modelName: string }} raw
+   * @param {{
+   *   trainEmbeddings: number[][],
+   *   trainLabels: Record<string, boolean>[],
+   *   thresholds: Record<string, number>,
+   *   k: Record<string, number>,
+   *   modelName: string
+   * }} raw
    * @returns {object}
    */
   _parseModel(raw) {

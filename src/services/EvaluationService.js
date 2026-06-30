@@ -27,8 +27,6 @@ export class EvaluationService {
    * }}
    */
   splitTrainValTest(requirements, labelMap, { trainRatio = 0.70, valRatio = 0.15, seed = 42 } = {}) {
-    const testRatio = 1 - trainRatio - valRatio;
-
     const sorted = requirements.toSorted((a, b) => a.id.localeCompare(b.id));
 
     const clusters = this.#detector.detectClusters(sorted);

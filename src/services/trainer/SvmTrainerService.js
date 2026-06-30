@@ -8,7 +8,9 @@ import { linearScore } from "../../utils/embedding.js";
  * und optimiert Sigmoid-Konfidenzschwellenwerte auf dem Validation-Set.
  */
 export class SvmTrainerService extends TrainerService {
-  /** Kandidaten-C-Werte fuer die Gittersuche. */
+  /**
+   * Kandidaten-C-Werte fuer die Gittersuche.
+   */
   static #C_GRID = [0.1, 1, 10];
 
   async _trainAlgo({ trainEmb, valEmb, embeddingDim, trainLabels, classSizes,
@@ -27,15 +29,17 @@ export class SvmTrainerService extends TrainerService {
         return [code, svm.toJSON()];
       }));
       const valScores = valX.map(x => Object.fromEntries(STRIDE_CODES.map(c => [c, linearScore(x, svmModels[c])])));
-      const { thresholds, validationF1, zeroValClasses } = this._optimizeThresholds(valScores, valRequirements, labelMap, steps);
+      const { thresholds, validationF1, zeroValClasses } =
+        this._optimizeThresholds(valScores, valRequirements, labelMap, steps);
       const macroF1 = STRIDE_CODES.reduce((sum, c) => sum + validationF1[c], 0) / STRIDE_CODES.length;
       return { C, svmModels, thresholds, validationF1, zeroValClasses, macroF1 };
     });
-    const { C, svmModels, thresholds, validationF1, zeroValClasses } = candidates.reduce((a, b) => b.macroF1 > a.macroF1 ? b : a);
+    const { C, svmModels, thresholds, validationF1, zeroValClasses } =
+      candidates.reduce((a, b) => b.macroF1 > a.macroF1 ? b : a);
 
-    if (zeroValClasses.length > 0) onWarning?.(
-      `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
-    );
+    if (zeroValClasses.length > 0) {
+      onWarning?.(`Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`);
+    }
 
     const outputPath = await this._saveModel(outputFileName, containerSource, {
       C, embeddingDim, classSizes, thresholds, validationF1, svmModels

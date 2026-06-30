@@ -26,13 +26,11 @@ export class ClassifierPlugin {
 
   /**
    * Laedt die Transformer-Feature-Extraction-Pipeline einmalig (Lazy-Init).
-   * Gibt null zurueck wenn kein encoderConfig gesetzt ist.
    *
-   * @returns {Promise<Function|null>}
+   * @returns {Promise<Function>}
    */
   async loadPipeline() {
     if (this.pipeline !== null) return this.pipeline;
-    if (this.encoderConfig === null) return null;
     try {
       const { pipeline } = await import(this.encoderConfig.library);
       this.pipeline = await pipeline(this.encoderConfig.task, this.encoderConfig.modelName);
@@ -47,12 +45,10 @@ export class ClassifierPlugin {
   /**
    * Laedt die Modelldatei einmalig (Lazy-Init).
    *
-   * @returns {Promise<object|null>} Geladenes Modell oder null.
+   * @returns {Promise<object>} Geladenes Modell.
    */
   async loadModel() {
     if (this.model !== null) return this.model;
-    if (this.modelPath === null) return null;
-
     let raw;
     try {
       raw = JSON.parse(await readFile(this.modelPath, "utf-8"));
@@ -126,7 +122,7 @@ export class ClassifierPlugin {
    * mit vorhergesagten Labels und klassenweisen Zuordnungswerten zurueck.
    *
    * @param {import("../models/Requirement.js").Requirement[]} requirements
-   * @param contextByRequirement
+   * @param {Map<string, import("../models/ContextElement.js").ContextElement[]>|null} [contextByRequirement]
    * @returns {Promise<ClassificationResult[]>}
    */
   async classify(requirements, contextByRequirement = null) {
@@ -155,19 +151,8 @@ export class ClassifierPlugin {
    * Standardimplementierung gibt raw unveraendert zurueck.
    *
    * @param {object} raw  Geparstes JSON aus der Modelldatei.
-   * @returns {object}
+   * @returns {object} raw unveraendert.
    */
   _parseModel(raw) { return raw; }
 
-  /**
-   * Berechnet klassenweise Zuordnungswerte fuer eine einzelne Einbettung.
-   * Muss von jedem ML-Plugin implementiert werden.
-   *
-   * @param {Float32Array} embedding  L2-normalisierte Einbettung der Anforderung.
-   * @param {object}       model      Geladenes Modell (Ausgabe von _parseModel).
-   * @returns {Record<string, number>}  STRIDE-Code -> Zuordnungswert.
-   */
-  _scoreAll(embedding, model) {
-    throw new Error(`${this.constructor.name} muss _scoreAll() implementieren.`);
-  }
 }

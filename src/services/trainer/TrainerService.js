@@ -33,8 +33,12 @@ export class TrainerService {
    * @param {Map} [opts.contextByRequirement]
    * @param {Function} [opts.onProgress]
    * @param {Function} [opts.onWarning]
+   * @returns {Promise<object>} outputPath, classSizes, thresholds, validationF1.
    */
-  async train({ trainRequirements, valRequirements, labelMap, outputFileName, containerSource, contextByRequirement = null, onProgress, onWarning = null }) {
+  async train({
+    trainRequirements, valRequirements, labelMap, outputFileName, containerSource,
+    contextByRequirement = null, onProgress, onWarning = null
+  }) {
     if (trainRequirements.length === 0) throw new Error(`Trainings-Split leer – ${this.constructor.name} abgebrochen.`);
 
     const trainEmb = contextByRequirement
@@ -54,16 +58,6 @@ export class TrainerService {
       valRequirements, labelMap,
       outputFileName, containerSource, onWarning
     });
-  }
-
-  /**
-   * Algo-spezifischer Hook: Modell berechnen, Val-Scores bestimmen,
-   * Thresholds optimieren, Modell persistieren.
-   * Muss von jeder Unterklasse implementiert werden.
-   * @param opts
-   */
-  async _trainAlgo(opts) {
-    throw new Error(`${this.constructor.name} muss _trainAlgo() implementieren.`);
   }
 
   /**

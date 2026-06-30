@@ -14,11 +14,13 @@ export function dot(a, b) {
 }
 
 /**
+ * L2-normiert einen Vektor (Einheitslaenge).
  *
- * @param vector
+ * @param {number[]} vector
+ * @returns {number[]}
  */
 function l2Normalize(vector) {
-  const norm = Math.sqrt(vector.reduce((s, v) => s + v * v, 0));
+  const norm = Math.sqrt(vector.reduce((s, v) => s + (v * v), 0));
   return norm > 0 ? vector.map(v => v / norm) : vector;
 }
 
@@ -79,12 +81,12 @@ export function centerScores(scores) {
  *
  * @param {Float32Array|number[]} reqEmbedding
  * @param {Array<Float32Array|number[]>} ctxEmbeddings
- * @param {number} [alpha=0.8]  Gewicht der Anforderung; Kontextanteil ist (1 - alpha).
+ * @param {number} [alpha=0.7]  Gewicht der Anforderung; Kontextanteil ist (1 - alpha).
  * @returns {number[]}
  */
 export function fuseEmbedding(reqEmbedding, ctxEmbeddings, alpha = 0.7) {
   if (ctxEmbeddings.length === 0) return Array.from(reqEmbedding);
   const ctxMean = new Matrix(ctxEmbeddings.map(e => Array.from(e))).mean("column");
-  const fused = ctxMean.map((v, i) => alpha * reqEmbedding[i] + (1 - alpha) * v);
+  const fused = ctxMean.map((v, i) => (alpha * reqEmbedding[i]) + ((1 - alpha) * v));
   return l2Normalize(fused);
 }

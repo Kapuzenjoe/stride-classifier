@@ -44,10 +44,12 @@ const [command] = positionals;
 // ─── Pfad-Auflösung ───────────────────────────────────────────────────────────
 
 /**
+ * Loest arg zu einem absoluten Pfad auf.
  *
- * @param arg
- * @param dir
- * @param prefix
+ * @param {string} arg
+ * @param {string} dir     Default-Verzeichnis.
+ * @param {string} prefix  Default-Praefix.
+ * @returns {string}
  */
 function resolvePath(arg, dir, prefix) {
   if (!arg) return arg;
@@ -57,6 +59,14 @@ function resolvePath(arg, dir, prefix) {
 const resolveContainerPath = arg => resolvePath(arg, datasets.containerOutputDir, "container.");
 const resolveModelPath = arg => resolvePath(arg, datasets.modelsDir, "model.");
 
+/**
+ * Baut den Default-Dateinamen fuer ein trainiertes Modell.
+ *
+ * @param {string} containerArg
+ * @param {string} classifier
+ * @param {string} encoder
+ * @returns {string}
+ */
 function defaultModelFileName(containerArg, classifier, encoder) {
   const source = path.basename(containerArg ?? "unknown", ".json").replace(/^container\./, "");
   return `model.${[source, classifier, encoder].join(".")}.json`;
@@ -104,27 +114,30 @@ if (!encoderConfig) {
 }
 
 const containerPath = resolveContainerPath(args.container);
-const modelPath = resolveModelPath(args.model);
 const encoderNameForFile = args.classifier === ClassifierName.RULE_BASED ? null : encoderConfig.name;
 
 // ─── Trainer-Plugins: nur bei train erstellen ─────────────────────────────────
-const trainerServices = command === "train" ? (() => {
+let trainerServices = { centroidTrainerService: null, knnTrainerService: null, svmTrainerService: null };
+if (command === "train") {
   const centroidPlugin = new TransformerCentroidClassifierPlugin({ encoderConfig, modelPath: null });
   const knnPlugin = new TransformerKnnClassifierPlugin({ encoderConfig, modelPath: null });
   const svmPlugin = new TransformerSvmClassifierPlugin({ encoderConfig, modelPath: null });
-  return {
+  trainerServices = {
     centroidTrainerService: new CentroidTrainerService({ classifier: centroidPlugin, datasets }),
     knnTrainerService: new KnnTrainerService({ classifier: knnPlugin, datasets, k: args.k ? Number(args.k) : null }),
     svmTrainerService: new SvmTrainerService({ classifier: svmPlugin, datasets })
   };
-})() : { centroidTrainerService: null, knnTrainerService: null, svmTrainerService: null };
+}
 
 // ─── Inference-Plugin erstellen ───────────────────────────────────────────────
 /**
+ * Erstellt das passende Classifier-Plugin fuer den gegebenen Klassifikator-Namen.
  *
- * @param name
+ * @param {string} name
+ * @returns {import("./plugins/ClassifierPlugin.js").ClassifierPlugin}
  */
 function createClassifierPlugin(name) {
+  const modelPath = resolveModelPath(args.model);
   switch (name) {
     case ClassifierName.RULE_BASED:
       return new RuleBasedClassifierPlugin();

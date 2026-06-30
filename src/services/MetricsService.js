@@ -2,6 +2,19 @@ import { ConfusionMatrix } from "ml-confusion-matrix";
 import { STRIDE_CODES } from "../models/StrideCategory.js";
 
 /**
+ * @typedef {object} ClassMetrics
+ * @property {number} precision
+ * @property {number} recall
+ * @property {number} f1
+ * @property {number} accuracy
+ * @property {number} positives
+ * @property {number} tp
+ * @property {number} fp
+ * @property {number} fn
+ * @property {number} tn
+ */
+
+/**
  * Berechnet Klassifikationsmetriken fuer Multi-Label-STRIDE-Ergebnisse.
  * Alle Metriken basieren auf Binary-Relevance (eine binaere Entscheidung je Klasse).
  */
@@ -11,7 +24,7 @@ export class MetricsService {
    *
    * @param {import("../models/ClassificationResult.js").ClassificationResult[]} results
    * @param {Map<string, {S: boolean, T: boolean, R: boolean, I: boolean, D: boolean, E: boolean}>} labelMap
-   * @returns {Record<string, {precision: number, recall: number, f1: number, accuracy: number, positives: number, tp: number, fp: number, fn: number, tn: number}>}
+   * @returns {Record<string, ClassMetrics>}
    */
   computePerClass(results, labelMap) {
     const predictedSets = results.map(r => new Set(r.labels));

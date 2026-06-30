@@ -1,4 +1,6 @@
-/** Klassifikator-Bezeichner (CLI-Argument-Werte). */
+/**
+ * Klassifikator-Bezeichner (CLI-Argument-Werte).
+ */
 export const ClassifierName = Object.freeze({
   RULE_BASED: "rule-based",
   CENTROID: "centroid",

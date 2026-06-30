@@ -6,7 +6,9 @@ import { dot, topKIndices } from "../../utils/embedding.js";
  * KNN-Trainer: optimiert k und Schwellenwerte je STRIDE-Klasse per Grid-Search auf dem Validation-Set.
  */
 export class KnnTrainerService extends TrainerService {
-  /** Kandidaten-k-Werte fuer die klassenindividuelle Grid-Suche. */
+  /**
+   * Kandidaten-k-Werte fuer die klassenindividuelle Grid-Suche.
+   */
   static #K_GRID = [5, 7, 11];
 
   constructor({ classifier, datasets, k = null }) {
@@ -48,9 +50,9 @@ export class KnnTrainerService extends TrainerService {
     ));
     const zeroValClasses = kResults[0].zeroValClasses;
 
-    if (zeroValClasses.length > 0) onWarning?.(
-      `Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`
-    );
+    if (zeroValClasses.length > 0) {
+      onWarning?.(`Val-Set: Klasse(n) [${zeroValClasses.join(", ")}] ohne positive Beispiele -> Threshold-Fallback 0.5`);
+    }
 
     const outputPath = await this._saveModel(outputFileName, containerSource, {
       k: kPerClass,

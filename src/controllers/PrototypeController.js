@@ -7,19 +7,19 @@ import { ClassifierName } from "../config/classifiers.config.js";
 export class PrototypeController {
   /**
    * @param {object} deps Services und View des Prototyps.
-   * @param deps.datasetImportService
-   * @param deps.containerBuildService
-   * @param deps.containerLoadService
-   * @param deps.resultsWriterService
-   * @param deps.centroidTrainerService
-   * @param deps.knnTrainerService
-   * @param deps.svmTrainerService
-   * @param deps.classifierPlugin
-   * @param deps.contextEnrichmentService
-   * @param deps.evaluationService
-   * @param deps.metricsService
-   * @param deps.view
-   * @param deps.evaluationView
+   * @param {import("../services/DatasetImportService.js").DatasetImportService} deps.datasetImportService
+   * @param {import("../services/ContainerBuildService.js").ContainerBuildService} deps.containerBuildService
+   * @param {import("../services/ContainerLoadService.js").ContainerLoadService} deps.containerLoadService
+   * @param {import("../services/ResultsWriterService.js").ResultsWriterService} deps.resultsWriterService
+   * @param {import("../services/trainer/CentroidTrainerService.js").CentroidTrainerService} deps.centroidTrainerService
+   * @param {import("../services/trainer/KnnTrainerService.js").KnnTrainerService} deps.knnTrainerService
+   * @param {import("../services/trainer/SvmTrainerService.js").SvmTrainerService} deps.svmTrainerService
+   * @param {import("../plugins/ClassifierPlugin.js").ClassifierPlugin} deps.classifierPlugin
+   * @param {import("../services/ContextEnrichmentService.js").ContextEnrichmentService} deps.contextEnrichmentService
+   * @param {import("../services/EvaluationService.js").EvaluationService} deps.evaluationService
+   * @param {import("../services/MetricsService.js").MetricsService} deps.metricsService
+   * @param {import("../views/ConsoleView.js").ConsoleView} deps.view
+   * @param {import("../views/EvaluationView.js").EvaluationView} deps.evaluationView
    */
   constructor({
     datasetImportService,
@@ -67,7 +67,9 @@ export class PrototypeController {
     const { contextElements, relations } = await this.datasetImportService.loadContextData(source);
 
     if (contextElements.length > 0) {
-      this.view.renderContextCoverage(this.contextEnrichmentService.coverage(requirements, { contextElements, relations }));
+      this.view.renderContextCoverage(
+        this.contextEnrichmentService.coverage(requirements, { contextElements, relations })
+      );
     }
 
     const { container, outputPath } = await this.containerBuildService.build({
@@ -103,11 +105,15 @@ export class PrototypeController {
     const results = await this.classifierPlugin.classify(container.requirements, contextByRequirement);
 
     const textMap = this.#buildTextMap(container);
-    const resultPath = await this.resultsWriterService.write({ classifierName, encoderName, containerPath, results, labelMap, textMap });
+    const resultPath = await this.resultsWriterService.write({
+      classifierName, encoderName, containerPath, results, labelMap, textMap
+    });
     const labelCsvPath = await this.resultsWriterService.writeLabelCsv({ results, textMap, outputFileName: csvPath });
 
     const withLabel = results.filter(r => r.labels.length > 0).length;
-    this.view.renderClassifySummary({ withLabel, total: results.length, classifierName, container, resultPath, labelCsvPath });
+    this.view.renderClassifySummary({
+      withLabel, total: results.length, classifierName, container, resultPath, labelCsvPath
+    });
 
     return results;
   }
@@ -220,7 +226,9 @@ export class PrototypeController {
   // ── Private Hilfsmethoden ────────────────────────────────────────────────────
 
   #contextFor(container) {
-    return container.withContext ? this.contextEnrichmentService.linkedContext(container.requirements, container) : null;
+    return container.withContext
+      ? this.contextEnrichmentService.linkedContext(container.requirements, container)
+      : null;
   }
 
   /**

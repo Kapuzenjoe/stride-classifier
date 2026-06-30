@@ -4,7 +4,9 @@
  * Abschn. 19.6 "Near-duplicates and shingling", S. 437-440): Texte werden in
  * k-Gramm-Mengen ("Shingles") zerlegt, paarweise ueber den Jaccard-Koeffizienten
  * verglichen und bei Ueberschreiten eines Schwellenwerts per Union-Find zu
- * "syntaktischen Clustern" zusammengefasst (ebd., S. 439).
+ * "syntaktischen Clustern" zusammengefasst (ebd., S. 440). Der Jaccard-Koeffizient
+ * wird hier exakt berechnet, nicht ueber Min-Hashing-Sketches wie bei Manning,
+ * da die Datensatzgroesse paarweise Vergleiche zulaesst.
  */
 export class NearDuplicateDetector {
   /**
@@ -42,8 +44,9 @@ export class NearDuplicateDetector {
   /**
    * Bildet die Menge der k-Shingles eines Textes: alle aufeinanderfolgenden
    * Wortfolgen der Laenge k (Manning, S. 438).
-   * @param text
-   * @param k
+   * @param {string} text
+   * @param {number} k
+   * @returns {Set<string>}
    */
   #shingles(text, k) {
     const terms = text.toLowerCase().replace(/[„"().,;:/-]/g, " ").split(/\s+/).filter(Boolean);
@@ -55,8 +58,9 @@ export class NearDuplicateDetector {
   /**
    * Jaccard-Koeffizient zweier Shingle-Mengen: |Schnittmenge| / |Vereinigung|
    * (Manning, S. 438, im Anschluss an die Definition auf S. 61).
-   * @param a
-   * @param b
+   * @param {Set<string>} a
+   * @param {Set<string>} b
+   * @returns {number} Jaccard-Koeffizient (0..1).
    */
   #jaccard(a, b) {
     let intersection = 0;
